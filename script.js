@@ -9,69 +9,46 @@ let selectedPeople = [];
 let rotation = 0;
 let isSpinning = false;
 
-const SPIN_DURATION = 8500;
-const REMOVE_DELAY = 2500;
+const SPIN_DURATION = 8000;
+const REMOVE_DELAY = 2000;
 
-/* ===============================
-   HELPERS
-================================ */
-
-function shuffleArray(array){
-    const shuffled=[...array];
-    for(let i=shuffled.length-1;i>0;i--){
-        const j=Math.floor(Math.random()*(i+1));
-        [shuffled[i],shuffled[j]]=[shuffled[j],shuffled[i]];
-    }
-    return shuffled;
-}
-
-/* ===============================
-   GOOGLE SHEET
-================================ */
+/* ================= LOAD STATE ================= */
 
 async function loadState(){
     try{
-        const res=await fetch(API_URL);
-        if(!res.ok) throw new Error("Bad response");
-        const data=await res.json();
+        const res = await fetch(API_URL);
+        const data = await res.json();
 
-        segments=data.remaining
+        segments = data.remaining
             ? data.remaining.split(",").filter(Boolean)
-            : shuffleArray(originalNames);
+            : [...originalNames];
 
-        selectedPeople=data.history
+        selectedPeople = data.history
             ? data.history.split(",").filter(Boolean)
             : [];
 
-    }catch(err){
-        console.log("Load failed — using defaults");
-        segments=shuffleArray(originalNames);
-        selectedPeople=[];
+    }catch{
+        segments = [...originalNames];
+        selectedPeople = [];
     }
 
     updateUI();
 }
 
 async function saveState(){
-    try{
-        await fetch(API_URL,{
-            method:"POST",
-            body:JSON.stringify({
-                remaining:segments.join(","),
-                history:selectedPeople.join(",")
-            })
-        });
-    }catch(err){
-        console.log("Save failed",err);
-    }
+    await fetch(API_URL,{
+        method:"POST",
+        body:JSON.stringify({
+            remaining:segments.join(","),
+            history:selectedPeople.join(",")
+        })
+    });
 }
 
-/* ===============================
-   RENDER WHEEL
-================================ */
+/* ================= RENDER ================= */
 
 function renderWheel(){
-    const container=document.getElementById("segments");
+    const container = document.getElementById("segments");
     container.innerHTML="";
 
     if(segments.length===0) return;
@@ -88,17 +65,15 @@ function renderWheel(){
         const largeArc=360/segments.length>180?1:0;
         const pathData=`M100 100 L ${x1} ${y1} A95 95 0 ${largeArc} 1 ${x2} ${y2} Z`;
 
-        const textAngle=angle+(360/segments.length)/2;
-        const textX=100+65*Math.cos((textAngle-90)*Math.PI/180);
-        const textY=100+65*Math.sin((textAngle-90)*Math.PI/180);
-
         const g=document.createElementNS("http://www.w3.org/2000/svg","g");
 
         const path=document.createElementNS("http://www.w3.org/2000/svg","path");
         path.setAttribute("d",pathData);
         path.setAttribute("fill",colors[index%colors.length]);
-        path.setAttribute("stroke","#333");
-        path.setAttribute("stroke-width","1");
+
+        const textAngle=angle+(360/segments.length)/2;
+        const textX=100+65*Math.cos((textAngle-90)*Math.PI/180);
+        const textY=100+65*Math.sin((textAngle-90)*Math.PI/180);
 
         const text=document.createElementNS("http://www.w3.org/2000/svg","text");
         text.setAttribute("x",textX);
@@ -106,13 +81,7 @@ function renderWheel(){
         text.setAttribute("text-anchor","middle");
         text.setAttribute("dominant-baseline","middle");
         text.setAttribute("fill","white");
-        text.setAttribute("font-weight","bold");
-
-        let fontSize=6;
-        if(segments.length<20) fontSize=7;
-        if(segments.length<10) fontSize=9;
-
-        text.setAttribute("font-size",fontSize);
+        text.setAttribute("font-size","7");
         text.setAttribute("transform",`rotate(${textAngle-90},${textX},${textY})`);
         text.textContent=name;
 
@@ -122,97 +91,54 @@ function renderWheel(){
     });
 }
 
-/* ===============================
-   SIDE LISTS
-================================ */
-
 function renderSegmentsList(){
     const container=document.getElementById("segmentsList");
     container.innerHTML="";
-
     segments.forEach(name=>{
         const row=document.createElement("div");
-        row.className="flex justify-between items-center bg-gray-100 px-3 py-2 rounded";
-
+        row.className="flex justify-between bg-gray-100 px-3 py-2 rounded";
         row.innerHTML=`<span>${name}</span>`;
-
-        const btn=document.createElement("button");
-        btn.textContent="🗑️";
-        btn.onclick=()=>{
-            segments=segments.filter(n=>n!==name);
-            selectedPeople.push(name);
-            updateUI();
-            saveState();
-        };
-
-        row.appendChild(btn);
         container.appendChild(row);
     });
-
     document.getElementById("segmentCount").textContent=segments.length;
 }
 
 function renderSelectedList(){
     const container=document.getElementById("selectedList");
     container.innerHTML="";
-
     selectedPeople.forEach(name=>{
         const row=document.createElement("div");
-        row.className="flex justify-between items-center bg-yellow-100 px-3 py-2 rounded";
-
+        row.className="flex justify-between bg-yellow-100 px-3 py-2 rounded";
         row.innerHTML=`<span>${name}</span>`;
-
-        const btn=document.createElement("button");
-        btn.textContent="↩️";
-        btn.onclick=()=>{
-            selectedPeople=selectedPeople.filter(n=>n!==name);
-            segments.push(name);
-            updateUI();
-            saveState();
-        };
-
-        row.appendChild(btn);
         container.appendChild(row);
     });
-
     document.getElementById("selectedCount").textContent=selectedPeople.length;
-
     document.getElementById("selectedSection")
         .classList.toggle("hidden",selectedPeople.length===0);
 }
 
-/* ===============================
-   ADD / RESET
-================================ */
-
-function addSegment(){
-    const input=document.getElementById("newSegment");
-    const value=input.value.trim();
-    if(!value) return;
-
-    segments.push(value);
-    input.value="";
-    updateUI();
-    saveState();
+function updateUI(){
+    renderWheel();
+    renderSegmentsList();
+    renderSelectedList();
 }
+
+/* ================= ADD ALL BACK ================= */
 
 function addAllBack(){
-    segments=shuffleArray(originalNames);
-    selectedPeople=[];
+    segments = [...segments, ...selectedPeople];
+    selectedPeople = [];
     updateUI();
     saveState();
 }
 
-/* ===============================
-   SPIN
-================================ */
+/* ================= SPIN ================= */
 
 function spinWheel(){
     if(isSpinning||segments.length===0) return;
 
     isSpinning=true;
     document.getElementById("spinBtn").disabled=true;
-    document.getElementById("winnerBox").classList.add("hidden");
 
     const spins=4+Math.random()*2;
     const randomDegree=Math.random()*360;
@@ -256,12 +182,18 @@ function spinWheel(){
     },SPIN_DURATION);
 }
 
-/* ===============================
-   INIT
-================================ */
+/* ================= INIT ================= */
 
 document.getElementById("spinBtn").addEventListener("click",spinWheel);
-document.getElementById("addBtn").addEventListener("click",addSegment);
+document.getElementById("addBtn").addEventListener("click",()=>{
+    const input=document.getElementById("newSegment");
+    const value=input.value.trim();
+    if(!value) return;
+    segments.push(value);
+    input.value="";
+    updateUI();
+    saveState();
+});
 document.getElementById("addAllBackBtn").addEventListener("click",addAllBack);
 
 loadState();
