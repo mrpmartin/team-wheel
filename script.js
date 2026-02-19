@@ -134,52 +134,67 @@ function addAllBack(){
 
 /* ================= SPIN ================= */
 
-function spinWheel(){
-    if(isSpinning||segments.length===0) return;
+function spinWheel() {
+    if (isSpinning || segments.length === 0) return;
 
-    isSpinning=true;
-    document.getElementById("spinBtn").disabled=true;
+    isSpinning = true;
+    document.getElementById("spinBtn").disabled = true;
 
-    const spins=4+Math.random()*2;
-    const randomDegree=Math.random()*360;
-    const totalRotation=rotation+spins*360+randomDegree;
+    // 🔊 PLAY SOUND
+    const audio = document.getElementById("spinSound");
+    if (audio) {
+        audio.currentTime = 0;
+        audio.play().catch(err => {
+            console.log("Audio play prevented:", err);
+        });
+    }
 
-    const wheel=document.getElementById("wheel");
-    wheel.style.transition=`transform ${SPIN_DURATION}ms ease-out`;
-    wheel.style.transform=`rotate(${totalRotation}deg)`;
-    rotation=totalRotation;
+    const spins = 4 + Math.random() * 2;
+    const randomDegree = Math.random() * 360;
+    const totalRotation = rotation + spins * 360 + randomDegree;
 
-    setTimeout(()=>{
-        const normalized=totalRotation%360;
-        const segmentAngle=360/segments.length;
-        const winningIndex=Math.floor((90-normalized)/segmentAngle+segments.length)%segments.length;
+    const wheel = document.getElementById("wheel");
+    wheel.style.transition = `transform ${SPIN_DURATION}ms ease-out`;
+    wheel.style.transform = `rotate(${totalRotation}deg)`;
+    rotation = totalRotation;
 
-        const winner=segments[winningIndex];
+    setTimeout(() => {
 
-        document.getElementById("winnerName").textContent=winner;
+        const normalized = totalRotation % 360;
+        const segmentAngle = 360 / segments.length;
+
+        const winningIndex =
+            Math.floor((90 - normalized) / segmentAngle + segments.length) %
+            segments.length;
+
+        const winner = segments[winningIndex];
+
+        document.getElementById("winnerName").textContent = winner;
         document.getElementById("winnerBox").classList.remove("hidden");
 
-        setTimeout(()=>{
-            selectedPeople.push(winner);
-            segments.splice(winningIndex,1);
+        setTimeout(() => {
 
-            rotation=0;
-            wheel.style.transition="none";
-            wheel.style.transform="rotate(0deg)";
+            selectedPeople.push(winner);
+            segments.splice(winningIndex, 1);
+
+            // reset wheel cleanly
+            rotation = 0;
+            wheel.style.transition = "none";
+            wheel.style.transform = "rotate(0deg)";
 
             updateUI();
             saveState();
 
-            document.getElementById("spinBtn").disabled=false;
-            isSpinning=false;
+            document.getElementById("spinBtn").disabled = false;
+            isSpinning = false;
 
-            if(segments.length===0){
+            if (segments.length === 0) {
                 document.getElementById("completeBox").classList.remove("hidden");
             }
 
-        },REMOVE_DELAY);
+        }, REMOVE_DELAY);
 
-    },SPIN_DURATION);
+    }, SPIN_DURATION);
 }
 
 /* ================= INIT ================= */
