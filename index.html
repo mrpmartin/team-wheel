@@ -3,26 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Wheel Spinner</title>
+    <title>Team Presenter Wheel</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="styles.css">
 </head>
 <body class="min-h-screen bg-gradient-to-br from-purple-100 to-blue-100 p-8">
     <div class="max-w-7xl mx-auto">
-        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Custom Wheel Spinner</h1>
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Team Presenter Wheel</h1>
         
         <div class="grid lg:grid-cols-3 gap-8">
-            <!-- Wheel Section - Now Takes Up 2 Columns -->
+            
+            <!-- WHEEL -->
             <div class="lg:col-span-2 bg-white rounded-lg shadow-lg p-6">
                 <div class="flex flex-col items-center">
+                    
                     <div class="relative mb-6">
-                        <!-- Pointer - NOW ON THE RIGHT SIDE (3 o'clock) -->
                         <div class="absolute top-1/2 right-0 translate-x-6 -translate-y-1/2 z-10">
                             <div class="w-0 h-0 border-t-[25px] border-t-transparent border-b-[25px] border-b-transparent border-r-[50px] border-r-red-500"></div>
                         </div>
 
-                        <!-- Wheel - Much Bigger Now -->
-                        <div class="relative" style="width: 600px; height: 600px;">
+                        <div class="relative" style="width:600px;height:600px;">
                             <svg id="wheel" viewBox="0 0 200 200" class="w-full h-full">
                                 <circle cx="100" cy="100" r="98" fill="white" stroke="#333" stroke-width="2"/>
                                 <g id="segments"></g>
@@ -31,50 +30,57 @@
                         </div>
                     </div>
 
-                    <button id="spinBtn" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-full font-bold text-xl hover:from-purple-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105">
+                    <button id="spinBtn" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-8 py-4 rounded-full font-bold text-xl hover:scale-105 transition disabled:opacity-50">
                         🎮 Spin the Wheel!
                     </button>
 
                     <div id="winnerBox" class="mt-6 p-6 bg-yellow-100 border-2 border-yellow-400 rounded-lg hidden">
-                        <p class="text-2xl font-bold text-center text-gray-800">
+                        <p class="text-2xl font-bold text-center">
                             Selected: <span id="winnerName" class="text-yellow-600"></span>
                         </p>
-                        <p class="text-sm text-center text-gray-600 mt-1">Removing from wheel...</p>
                     </div>
 
                     <div id="completeBox" class="mt-6 p-6 bg-green-100 border-2 border-green-400 rounded-lg hidden">
-                        <p class="text-2xl font-bold text-center text-gray-800">All done! Everyone has been selected.</p>
+                        <p class="text-2xl font-bold text-center">Everyone has presented 🎉</p>
                     </div>
+
                 </div>
             </div>
 
-            <!-- Controls Section - Now 1 Column -->
+            <!-- SIDE PANEL -->
             <div class="bg-white rounded-lg shadow-lg p-6">
-                <h2 class="text-2xl font-bold mb-4 text-gray-800">Customize Wheel</h2>
                 
+                <h2 class="text-2xl font-bold mb-4">Manage Wheel</h2>
+
                 <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Add Wheel Segment</label>
+                    <label class="block text-sm mb-2">Add Person</label>
                     <div class="flex gap-2">
-                        <input type="text" id="newSegment" placeholder="Enter segment name" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <button id="addBtn" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">➕ Add</button>
+                        <input id="newSegment" class="flex-1 px-3 py-2 border rounded" placeholder="Enter name">
+                        <button id="addBtn" class="px-4 py-2 bg-green-500 text-white rounded">➕</button>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Presenters (<span id="segmentCount">0</span>)</label>
-                    <div id="segmentsList" class="space-y-2 max-h-96 overflow-y-auto"></div>
+                    <div class="flex justify-between mb-2">
+                        <span class="font-medium">Remaining (<span id="segmentCount">0</span>)</span>
+                    </div>
+                    <div id="segmentsList" class="space-y-2 max-h-64 overflow-y-auto"></div>
                 </div>
 
                 <div id="selectedSection" class="mt-6 hidden">
-                    <div class="flex items-center justify-between mb-2">
-                        <label class="block text-sm font-medium text-gray-700">Already Selected (<span id="selectedCount">0</span>)</label>
-                        <button id="addAllBackBtn" class="px-3 py-1 bg-blue-500 text-white text-sm rounded-lg hover:bg-blue-600 transition-colors">🔄 Add All Back</button>
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-medium">History (<span id="selectedCount">0</span>)</span>
+                        <button id="addAllBackBtn" class="px-3 py-1 bg-blue-500 text-white text-sm rounded">
+                            🔄 Add All Back
+                        </button>
                     </div>
                     <div id="selectedList" class="space-y-2 max-h-64 overflow-y-auto"></div>
                 </div>
+
             </div>
         </div>
     </div>
+
     <audio id="spinSound" src="spin-sound.mp3"></audio>
     <script src="script.js"></script>
 </body>
