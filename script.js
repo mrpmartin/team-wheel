@@ -1,19 +1,12 @@
 const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E2'];
 
-const API_URL = "https://script.google.com/macros/s/AKfycbyHDVJZMalmOmeu395uSe0NIM8Wyu6bjXdrUj17ZDT6VN1ZRgSTigElQya9Gp3yOSbR_g/exec;
+const API_URL = "https://script.google.com/macros/s/AKfycbyHDVJZMalmOmeu395uSe0NIM8Wyu6bjXdrUj17ZDT6VN1ZRgSTigElQya9Gp3yOSbR_g/exec";
 
-// Shuffle function
-function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-}
+/* ===============================
+   DATA
+================================ */
 
-// Original names
-const originalNames = ['Abby', 'AJ', 'Alicia', 'Anastasia', 'Asha', 'Bailey', 'Carla', 'Chevron', 'Daniel', 'Danielle', 'Dominic', 'Elizabeth', 'Jeremy', 'Jess', 'Johanna', 'Jordan', 'Juan', 'Karthika', 'Komal', 'Kristen', 'Leanne', 'Mahesh', 'Michael', 'Paul', 'Petra', 'Rakhee', 'Rayan', 'Ritchie', 'Safia', 'Samaira', 'Sarah', 'Satish', 'Sean', 'Simon', 'Sofia', 'Tom', 'Victoria', 'Victor', 'Zach', 'Zack', 'Vivien'];
+const originalNames = ['Abby','AJ','Alicia','Anastasia','Asha','Bailey','Carla','Chevron','Daniel','Danielle','Dominic','Elizabeth','Jeremy','Jess','Johanna','Jordan','Juan','Karthika','Komal','Kristen','Leanne','Mahesh','Michael','Paul','Petra','Rakhee','Rayan','Ritchie','Safia','Samaira','Sarah','Satish','Sean','Simon','Sofia','Tom','Victoria','Victor','Zach','Zack','Vivien'];
 
 let segments = [];
 let selectedPeople = [];
@@ -24,28 +17,38 @@ const SPIN_DURATION = 8500;
 const REMOVE_DELAY = 2500;
 
 /* ===============================
+   HELPERS
+================================ */
+
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+/* ===============================
    GOOGLE SHEET LOAD + SAVE
 ================================ */
 
 async function loadState() {
     try {
         const res = await fetch(API_URL);
+        if (!res.ok) throw new Error("Bad response");
         const data = await res.json();
 
-        if (data.remaining) {
-            segments = data.remaining.split(",").filter(Boolean);
-        } else {
-            segments = shuffleArray(originalNames);
-        }
+        segments = data.remaining
+            ? data.remaining.split(",").filter(Boolean)
+            : shuffleArray(originalNames);
 
-        if (data.history) {
-            selectedPeople = data.history.split(",").filter(Boolean);
-        } else {
-            selectedPeople = [];
-        }
+        selectedPeople = data.history
+            ? data.history.split(",").filter(Boolean)
+            : [];
 
     } catch (err) {
-        console.log("Load failed, using default list");
+        console.log("Load failed. Using default list.");
         segments = shuffleArray(originalNames);
         selectedPeople = [];
     }
@@ -68,16 +71,16 @@ async function saveState() {
 }
 
 /* ===============================
-   RENDERING
+   RENDER WHEEL
 ================================ */
 
 function renderWheel() {
-    const segmentsContainer = document.getElementById('segments');
-    segmentsContainer.innerHTML = '';
+    const container = document.getElementById('segments');
+    container.innerHTML = '';
 
     if (segments.length === 0) return;
 
-    segments.forEach((segment, index) => {
+    segments.forEach((name, index) => {
         const angle = (360 / segments.length) * index;
         const nextAngle = (360 / segments.length) * (index + 1);
 
@@ -107,89 +110,144 @@ function renderWheel() {
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('dominant-baseline', 'middle');
         text.setAttribute('fill', 'white');
+        text.setAttribute('font-weight', 'bold');
 
-        let fontSize = 5;
-        if (segments.length < 30) fontSize = 6;
+        let fontSize = 6;
         if (segments.length < 20) fontSize = 7;
         if (segments.length < 10) fontSize = 9;
-        if (segment.length > 10) fontSize = Math.max(4, fontSize - 1);
 
         text.setAttribute('font-size', fontSize);
-        text.setAttribute('font-weight', 'bold');
         text.setAttribute('transform', `rotate(${textAngle - 90}, ${textX}, ${textY})`);
-        text.textContent = segment;
+        text.textContent = name;
 
         g.appendChild(path);
         g.appendChild(text);
-        segmentsContainer.appendChild(g);
+        container.appendChild(g);
     });
 }
 
-function updateUI() {
-    renderWheel();
-    renderSegmentsList();
-    renderSelectedList();
-    document.getElementById('completeBox').classList.toggle('hidden', segments.length > 0);
+/* ===============================
+   SIDE LISTS
+================================ */
+
+function renderSegmentsList() {
+    const container = document.getElementById('segmentsList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    segments.forEach(name => {
+        const row = document.createElement('div');
+        row.style.marginBottom = "4px";
+        row.textContent = name + " ";
+
+        const btn = document.createElement('button');
+        btn.textContent = "🗑️";
+        btn.onclick = () => {
+            segments = segments.filter(n => n !== name);
+            selectedPeople.push(name);
+            updateUI();
+            saveState();
+        };
+
+        row.appendChild(btn);
+        container.appendChild(row);
+    });
+}
+
+function renderSelectedList() {
+    const container = document.getElementById('selectedList');
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    selectedPeople.forEach(name => {
+        const row = document.createElement('div');
+        row.style.marginBottom = "4px";
+        row.textContent = name + " ";
+
+        const btn = document.createElement('button');
+        btn.textContent = "↩️";
+        btn.onclick = () => {
+            selectedPeople = selectedPeople.filter(n => n !== name);
+            segments.push(name);
+            updateUI();
+            saveState();
+        };
+
+        row.appendChild(btn);
+        container.appendChild(row);
+    });
 }
 
 /* ===============================
-   SPIN LOGIC
+   ADD ALL BACK
+================================ */
+
+function addAllBack() {
+    segments = shuffleArray(originalNames);
+    selectedPeople = [];
+    updateUI();
+    saveState();
+}
+
+/* ===============================
+   SPIN
 ================================ */
 
 function spinWheel() {
     if (isSpinning || segments.length === 0) return;
 
     isSpinning = true;
-    document.getElementById('winnerBox').classList.add('hidden');
     document.getElementById('spinBtn').disabled = true;
-    document.getElementById('spinBtn').textContent = '🎮 Spinning...';
-
-    const audio = document.getElementById('spinSound');
-    audio.currentTime = 0;
-    audio.play().catch(e => console.log('Audio play failed:', e));
 
     const spins = 4 + Math.random() * 2;
     const randomDegree = Math.random() * 360;
     const totalRotation = rotation + spins * 360 + randomDegree;
 
     const wheel = document.getElementById('wheel');
-    wheel.style.transition = `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+    wheel.style.transition = `transform ${SPIN_DURATION}ms ease-out`;
     wheel.style.transform = `rotate(${totalRotation}deg)`;
     rotation = totalRotation;
 
     setTimeout(() => {
-        const normalizedRotation = totalRotation % 360;
+        const normalized = totalRotation % 360;
         const segmentAngle = 360 / segments.length;
-        const winningIndex = Math.floor((90 - normalizedRotation) / segmentAngle + segments.length) % segments.length;
+        const winningIndex = Math.floor((90 - normalized) / segmentAngle + segments.length) % segments.length;
 
-        const winnerName = segments[winningIndex];
-        document.getElementById('winnerName').textContent = winnerName;
-        document.getElementById('winnerBox').classList.remove('hidden');
+        const winner = segments[winningIndex];
+        alert("🎉 Winner: " + winner);
 
-        setTimeout(() => {
-            selectedPeople.push(winnerName);
-            segments.splice(winningIndex, 1);
+        selectedPeople.push(winner);
+        segments.splice(winningIndex, 1);
 
-            rotation = 0;
-            wheel.style.transition = 'none';
-            wheel.style.transform = 'rotate(0deg)';
+        rotation = 0;
+        wheel.style.transition = "none";
+        wheel.style.transform = "rotate(0deg)";
 
-            updateUI();
-            saveState();   // ✅ SAVE HERE
+        updateUI();
+        saveState();
 
-            isSpinning = false;
-            document.getElementById('spinBtn').disabled = false;
-            document.getElementById('spinBtn').textContent = '🎮 Spin the Wheel!';
-            document.getElementById('winnerBox').classList.add('hidden');
-        }, REMOVE_DELAY);
+        isSpinning = false;
+        document.getElementById('spinBtn').disabled = false;
 
     }, SPIN_DURATION);
 }
 
 /* ===============================
-   INITIAL LOAD
+   UPDATE UI
+================================ */
+
+function updateUI() {
+    renderWheel();
+    renderSegmentsList();
+    renderSelectedList();
+}
+
+/* ===============================
+   INIT
 ================================ */
 
 document.getElementById('spinBtn').addEventListener('click', spinWheel);
 
-loadState();  // ✅ load from Google Sheet on page open
+loadState();
